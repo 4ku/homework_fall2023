@@ -28,7 +28,7 @@ def get_train_average_return(log_dir):
     return None
 
 def main():
-    exp_name = "bc_ant"
+    exp_name = "bc_halfcheetah"
     log_dirs = glob.glob(f'../data/{exp_name}/*')
 
     results = []

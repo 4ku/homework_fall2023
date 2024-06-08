@@ -132,7 +132,7 @@ def plot_combined(param_name, results, default_params, train_average_return, exp
     ax.grid(True)
 
 def main():
-    exp_name = "bc_ant"
+    exp_name = "bc_walker"
     log_dirs = glob.glob(f'../data/{exp_name}/*')
 
     results, train_average_return = get_experiments_data(log_dirs)
