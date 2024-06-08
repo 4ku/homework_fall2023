@@ -5,12 +5,20 @@ from tbparse import SummaryReader
 import numpy as np
 
 # Define default parameters
-DEFAULT_PARAMS = {
+# DEFAULT_PARAMS = {
+#     "n_layers": 2,
+#     "size": 64,
+#     "learning_rate": 5e-3,
+#     "num_agent_train_steps_per_iter": 1000,
+#     "train_batch_size": 100
+# }
+
+DAGGER_DEFAULT_PARAMS = {
     "n_layers": 2,
     "size": 64,
     "learning_rate": 5e-3,
     "num_agent_train_steps_per_iter": 1000,
-    "train_batch_size": 100
+    "train_batch_size": 300
 }
 
 def get_hparams(log_dir):
@@ -132,7 +140,8 @@ def plot_combined(param_name, results, default_params, train_average_return, exp
     ax.grid(True)
 
 def main():
-    exp_name = "bc_walker"
+    # exp_name = "bc_walker"
+    exp_name = "dagger_ant"
     log_dirs = glob.glob(f'../data/{exp_name}/*')
 
     results, train_average_return = get_experiments_data(log_dirs)
@@ -142,14 +151,14 @@ def main():
 
     # Create separate plots
     for param in params_to_plot:
-        plot_individual(param, results, DEFAULT_PARAMS, train_average_return, exp_name)
+        plot_individual(param, results, DAGGER_DEFAULT_PARAMS, train_average_return, exp_name)
 
     # Create combined plot in a 3x2 grid
     fig, axes = plt.subplots(3, 2, figsize=(15, 10))
     axes = axes.flatten()
 
     for ax, param in zip(axes, params_to_plot):
-        plot_combined(param, results, DEFAULT_PARAMS, train_average_return, exp_name, ax)
+        plot_combined(param, results, DAGGER_DEFAULT_PARAMS, train_average_return, exp_name, ax)
 
     fig.delaxes(axes[-1])  # Remove the last empty subplot if the number of params is less than the grid size
     plt.tight_layout()

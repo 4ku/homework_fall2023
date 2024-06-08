@@ -202,6 +202,12 @@ def run_training_loop(params):
             logs["TimeSinceStart"] = time.time() - start_time
             if itr == 0:
                 logs["Initial_DataCollection_AverageReturn"] = logs["Train_AverageReturn"]
+                # eval_paths, eval_envsteps_this_batch = utils.sample_trajectories(
+                #     env, expert_policy, 20_000, params['ep_len'])
+                # logs_expert = utils.compute_metrics(paths, eval_paths)
+                # print("Expert average return", logs_expert["Eval_AverageReturn"])
+                # print("Expert std return", logs_expert["Eval_StdReturn"])
+                # exit()
             
             logger.log_hparams(params, dict(logs))
             # perform the logging
@@ -270,7 +276,7 @@ def main():
     parser.add_argument('--eval_batch_size', type=int,
                         default=5000)  # eval data collected (in the env) for logging metrics
     parser.add_argument('--train_batch_size', type=int,
-                        default=100)  # number of sampled data points to be used per gradient/train step
+                        default=300)  # number of sampled data points to be used per gradient/train step
 
     parser.add_argument('--n_layers', type=int, default=2)  # depth, of policy to be learned
     parser.add_argument('--size', type=int, default=64)  # width of each layer, of policy to be learned
@@ -292,9 +298,9 @@ def main():
         {
             "n_layers": [2, 4, 8],
             "size": [64, 128, 256],
-            "learning_rate": [1e-4, 5e-4, 1e-3, 5e-3, 1e-2],
-            "num_agent_train_steps_per_iter": [5000],
-            "train_batch_size": [500]
+            "learning_rate": [5e-4, 1e-3, 5e-3, 1e-2],
+            "num_agent_train_steps_per_iter": [1000],
+            "train_batch_size": [300]
         },
         {
             "n_layers": [1, 2, 4, 8]
@@ -305,11 +311,11 @@ def main():
         {
             "learning_rate": [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
         },
+        # {
+        #     "num_agent_train_steps_per_iter": [100, 1000, 5000, 10000]
+        # },
         {
-            "num_agent_train_steps_per_iter": [100, 1000, 5000, 10000]
-        },
-        {
-            "train_batch_size": [1, 10, 100, 1000]
+            "train_batch_size": [1, 10, 100, 500, 1000]
         }
     ]
 
