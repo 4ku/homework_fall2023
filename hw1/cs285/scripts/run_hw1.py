@@ -4,7 +4,8 @@ Runs behavior cloning and DAgger for homework 1
 Functions to edit:
     1. run_training_loop
 """
-
+import itertools
+from copy import deepcopy
 import pickle
 import os
 import time
@@ -46,6 +47,7 @@ def run_training_loop(params):
     # Get params, create logger, create TF session
     logger = Logger(params['logdir'])
 
+    
     # Set random seeds
     seed = params['seed']
     np.random.seed(seed)
@@ -200,7 +202,8 @@ def run_training_loop(params):
             logs["TimeSinceStart"] = time.time() - start_time
             if itr == 0:
                 logs["Initial_DataCollection_AverageReturn"] = logs["Train_AverageReturn"]
-
+            
+            logger.log_hparams(params, dict(logs))
             # perform the logging
             for key, value in logs.items():
                 print('{} : {}'.format(key, value))
@@ -213,6 +216,42 @@ def run_training_loop(params):
             print('\nSaving agent params')
             actor.save('{}/policy_itr_{}.pt'.format(params['logdir'], itr))
 
+
+def run_experiments(params, finetune_params, args):
+    # Generate combinations dynamically
+    keys, values = zip(*finetune_params.items())
+    combinations = [dict(zip(keys, v)) for v in itertools.product(*values)]
+
+    for i, combo in enumerate(combinations):
+        print(f"Running experiment {i+1}/{len(combinations)} with {combo}")
+
+        # Update params
+        params.update(combo)
+
+        if args.do_dagger:
+            # Use this prefix when submitting. The auto-grader uses this prefix.
+            logdir_prefix = 'q2_'
+            assert args.n_iter > 1, ('DAGGER needs more than 1 iteration (n_iter>1) of training, to iteratively query the expert and train (after 1st warmstarting from behavior cloning).')
+        else:
+            # Use this prefix when submitting. The auto-grader uses this prefix.
+            logdir_prefix = 'q1_'
+            assert args.n_iter == 1, ('Vanilla behavior cloning collects expert data just once (n_iter=1)')
+
+        # directory for logging
+        data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f'../../data/{args.exp_name}')
+        if not (os.path.exists(data_path)):
+            os.makedirs(data_path)
+        logdir = logdir_prefix + args.exp_name + '_' + args.env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
+        logdir = os.path.join(data_path, logdir)
+        params['logdir'] = logdir
+        if not(os.path.exists(logdir)):
+            os.makedirs(logdir)
+
+        ###################
+        ### RUN TRAINING
+        ###################
+
+        run_training_loop(params)
 
 def main():
     import argparse
@@ -229,14 +268,14 @@ def main():
 
     parser.add_argument('--batch_size', type=int, default=1000)  # training data collected (in the env) during each iteration
     parser.add_argument('--eval_batch_size', type=int,
-                        default=1000)  # eval data collected (in the env) for logging metrics
+                        default=5000)  # eval data collected (in the env) for logging metrics
     parser.add_argument('--train_batch_size', type=int,
                         default=100)  # number of sampled data points to be used per gradient/train step
 
     parser.add_argument('--n_layers', type=int, default=2)  # depth, of policy to be learned
     parser.add_argument('--size', type=int, default=64)  # width of each layer, of policy to be learned
-    parser.add_argument('--learning_rate', '-lr', type=float, default=1e-3)  # LR for supervised learning
-
+    parser.add_argument('--learning_rate', '-lr', type=float, default=5e-3)  # LR for supervised learning
+    
     parser.add_argument('--video_log_freq', type=int, default=5)
     parser.add_argument('--scalar_log_freq', type=int, default=1)
     parser.add_argument('--no_gpu', '-ngpu', action='store_true')
@@ -249,35 +288,33 @@ def main():
     # convert args to dictionary
     params = vars(args)
 
-    ##################################
-    ### CREATE DIRECTORY FOR LOGGING
-    ##################################
+    finetune_params_list = [
+        {
+            "n_layers": [2, 4, 8],
+            "size": [64, 128, 256],
+            "learning_rate": [1e-4, 5e-4, 1e-3, 5e-3, 1e-2],
+            "num_agent_train_steps_per_iter": [5000],
+            "train_batch_size": [500]
+        },
+        {
+            "n_layers": [1, 2, 4, 8]
+        },
+        {
+            "size": [16, 32, 64, 128, 256]
+        },
+        {
+            "learning_rate": [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+        },
+        {
+            "num_agent_train_steps_per_iter": [100, 1000, 5000, 10000]
+        },
+        {
+            "train_batch_size": [1, 10, 100, 1000]
+        }
+    ]
 
-    if args.do_dagger:
-        # Use this prefix when submitting. The auto-grader uses this prefix.
-        logdir_prefix = 'q2_'
-        assert args.n_iter>1, ('DAGGER needs more than 1 iteration (n_iter>1) of training, to iteratively query the expert and train (after 1st warmstarting from behavior cloning).')
-    else:
-        # Use this prefix when submitting. The auto-grader uses this prefix.
-        logdir_prefix = 'q1_'
-        assert args.n_iter==1, ('Vanilla behavior cloning collects expert data just once (n_iter=1)')
-
-    # directory for logging
-    data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../../data')
-    if not (os.path.exists(data_path)):
-        os.makedirs(data_path)
-    logdir = logdir_prefix + args.exp_name + '_' + args.env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
-    logdir = os.path.join(data_path, logdir)
-    params['logdir'] = logdir
-    if not(os.path.exists(logdir)):
-        os.makedirs(logdir)
-
-    ###################
-    ### RUN TRAINING
-    ###################
-
-    run_training_loop(params)
-
+    for finetune_params in finetune_params_list:
+        run_experiments(deepcopy(params), finetune_params, args)
 
 if __name__ == "__main__":
     main()

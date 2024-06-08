@@ -133,7 +133,7 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         mean = self.mean_net(observation)
         std = torch.exp(self.logstd)
         dist = distributions.Normal(mean, std)
-        action = dist.sample()
+        action = dist.rsample()
         return action
 
     def update(self, observations, actions):
@@ -149,12 +149,12 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         observations = ptu.from_numpy(observations)
         actions = ptu.from_numpy(actions)
 
-        # actions_pred = [self.forward(obs) for obs in observations]
-        # actions_pred = torch.stack(actions_pred)
-
         # TODO: update the policy and return the loss
-        # loss = F.mse_loss(actions_pred, actions)
+        self.optimizer.zero_grad()
         loss = F.mse_loss(self.forward(observations), actions)
+        loss.backward()
+        self.optimizer.step()
+
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),

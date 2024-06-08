@@ -69,6 +69,9 @@ class Logger:
     def flush(self):
         self._summ_writer.flush()
 
+    def log_hparams(self, hparams, metrics):
+        self._summ_writer.add_hparams(hparams, metrics)
+
 
 
 
