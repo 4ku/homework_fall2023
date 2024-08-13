@@ -128,7 +128,8 @@ class PGAgent(nn.Module):
             advantages = q_values
         else:
             # TODO: run the critic and use it as a baseline
-            values = self.critic.forward(ptu.from_numpy(obs)).detach().numpy()
+            values = self.critic(ptu.from_numpy(obs))
+            values = ptu.to_numpy(values).reshape(-1)
             assert values.shape == q_values.shape
 
             if self.gae_lambda is None:
@@ -142,11 +143,16 @@ class PGAgent(nn.Module):
                 values = np.append(values, [0])
                 advantages = np.zeros(batch_size + 1)
 
+                deltas = rewards + self.gamma * values[1:] * (1 - terminals) - values[:-1]
                 for i in reversed(range(batch_size)):
                     # TODO: recursively compute advantage estimates starting from timestep T.
                     # HINT: use terminals to handle edge cases. terminals[i] is 1 if the state is the last in its
                     # trajectory, and 0 otherwise.
-                    pass
+                    
+                    # delta = rewards[i] + self.gamma * values[i + 1] * (1 - terminals[i]) - values[i]
+                    # advantages[i] = delta + self.gamma * self.gae_lambda * (1 - terminals[i]) * advantages[i + 1] 
+                    advantages[i] = deltas[i] + self.gamma * self.gae_lambda * (1 - terminals[i]) * advantages[i + 1] 
+
 
                 # remove dummy advantage
                 advantages = advantages[:-1]
@@ -176,7 +182,11 @@ class PGAgent(nn.Module):
         Helper function which takes a list of rewards {r_0, r_1, ..., r_t', ... r_T} and returns a list where the entry
         in each index t' is sum_{t'=t}^T gamma^(t'-t) * r_{t'}.
         """
-        result = np.zeros_like(rewards)
-        for i in range(len(rewards)):
-            result[i] = sum([rewards[j] * self.gamma ** (j - i) for j in range(i, len(rewards))])
-        return result
+        # result = np.zeros_like(rewards)
+        # for i in range(len(rewards)):
+        #     result[i] = sum([rewards[j] * self.gamma ** (j - i) for j in range(i, len(rewards))])
+        # return result
+        
+        n = len(rewards)
+        discounts = self.gamma ** np.arange(n)
+        return np.convolve(rewards[::-1], discounts)[:n][::-1]

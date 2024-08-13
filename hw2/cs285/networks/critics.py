@@ -45,7 +45,7 @@ class ValueCritic(nn.Module):
 
         # TODO: update the critic using the observations and q_values
         self.optimizer.zero_grad()
-        pred_qs = self.forward(obs)
+        pred_qs = self.forward(obs).reshape(-1)
         loss = F.mse_loss(q_values, pred_qs)
         loss.backward()
         self.optimizer.step()
