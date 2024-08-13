@@ -169,13 +169,3 @@ To understand the impact of different hyperparameters on the performance of the 
 
 **Plot with Comparisons:**
 ![Ant-v4 Comparison](plots/dagger_ant/combined_plots.png)
-
-### Walker2d-v4
-
-**Plot with Comparisons:**
-![Walker2d-v4 Comparison](plots/dagger_walker/combined_plots.png)
-
-### HalfCheetah-v4
-
-**Plot with Comparisons:**
-![HalfCheetah-v4 Comparison](plots/dagger_halfcheetah/combined_plots.png)
