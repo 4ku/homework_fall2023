@@ -16,15 +16,6 @@ def sample_trajectory(
 ) -> Dict[str, np.ndarray]:
     """Sample a rollout in the environment from a policy."""
     ob = env.reset()
-    if render:
-        print("saving image")
-        global i
-        if hasattr(env, "sim"):
-            img = env.sim.render(camera_name="track", height=500, width=500)[::-1]
-        else:
-            img = env.render()
-        cv2.imwrite(f"image_{i}.png", img)
-        i+=1
     obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
     steps = 0
     while True:

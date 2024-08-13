@@ -15,7 +15,9 @@ from cs285.infrastructure import utils
 from cs285.infrastructure.logger import Logger
 from cs285.infrastructure.action_noise_wrapper import ActionNoiseWrapper
 
-MAX_NVIDEO = 2
+MAX_NVIDEO = 1
+os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
+os.environ['MUJOCO_GL'] = 'osmesa'
 
 
 def run_training_loop(args):

@@ -26,6 +26,19 @@ class Logger:
         assert len(video_frames.shape) == 5, "Need [N, T, C, H, W] input tensor for video logging!"
         self._summ_writer.add_video('{}'.format(name), video_frames, step, fps=fps)
 
+    def log_video(self, video_frames, name, step, fps=10):
+        assert len(video_frames.shape) == 5, "Need [N, T, C, H, W] input tensor for video logging!"
+        n = 0
+        ind = 0
+        i = 0
+        while ind < 5 and i < video_frames.shape[1]:
+            while n<10:
+                self._summ_writer.add_images(f'{name}_step{step}_ind{ind}', video_frames[:, i], n)
+                i += 1
+                n += 1
+            n = 0
+            ind += 1
+
     def log_trajs_as_videos(self, trajs, step, max_videos_to_save=2, fps=10, video_title='video'):
 
         # reshape the rollouts
