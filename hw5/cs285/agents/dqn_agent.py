@@ -47,8 +47,12 @@ class DQNAgent(nn.Module):
         observation = ptu.from_numpy(np.asarray(observation))[None]
 
         # TODO(student): get the action from the critic using an epsilon-greedy strategy
-        raise NotImplementedError
-        action = ...
+        if torch.rand(1).item() < epsilon:
+            action = torch.randint(0, self.num_actions, (1,))
+        else:
+            with torch.no_grad():
+                action = torch.argmax(self.critic(observation), dim=1)
+        
 
         return ptu.to_numpy(action).squeeze(0).item()
 
@@ -68,23 +72,27 @@ class DQNAgent(nn.Module):
          - metrics: dict, a dictionary of metrics to log
          - variables: dict, a dictionary of variables that can be used in subsequent calculations
         """
+        (batch_size,) = reward.shape
 
         # TODO(student): paste in your code from HW3, and make sure the return values exist
-        raise NotImplementedError
         with torch.no_grad():
-            next_qa_values = ...
+            next_qa_values = self.target_critic(next_obs)
 
             if self.use_double_q:
-                next_action = ...
+                next_qa_values_usual = self.critic(next_obs)
+                next_action = torch.argmax(next_qa_values_usual, dim=1)
             else:
-                next_action = ...
-
-            next_q_values = ...
+                next_action = torch.argmax(next_qa_values, dim=1)
+            
+            next_q_values = next_qa_values.gather(1, next_action.unsqueeze(1)).squeeze(1)
             assert next_q_values.shape == (batch_size,), next_q_values.shape
 
-            target_values = ...
+            target_values = reward + (~done) * self.discount * next_q_values
             assert target_values.shape == (batch_size,), target_values.shape
 
+        qa_values = self.critic(obs)
+        q_values = qa_values.gather(1, action.unsqueeze(1)).squeeze(1) # Compute from the data actions; see torch.gather
+        loss = self.critic_loss(q_values, target_values)
         return (
             loss,
             {
@@ -137,5 +145,9 @@ class DQNAgent(nn.Module):
         Update the DQN agent, including both the critic and target.
         """
         # TODO(student): paste in your code from HW3
+        critic_stats = self.update_critic(obs, action, reward, next_obs, done)
+
+        if step % self.target_update_period == 0:
+            self.update_target_critic()
 
         return critic_stats
